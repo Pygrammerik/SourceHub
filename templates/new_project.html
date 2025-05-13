@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Новый проект{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="text-center mb-8">
+            <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-folder-plus text-3xl text-blue-600"></i>
+            </div>
+            <h1 class="text-2xl font-bold">Создание нового проекта</h1>
+            <p class="text-gray-600 mt-2">Расскажите о вашем проекте</p>
+        </div>
+        
+        <form method="POST" class="space-y-6">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Название проекта</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-folder text-gray-400"></i>
+                    </div>
+                    <input type="text" name="name" id="name" required
+                        class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Введите название проекта">
+                </div>
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">Описание</label>
+                <div class="mt-1">
+                    <textarea name="description" id="description" rows="4" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Опишите ваш проект"></textarea>
+                </div>
+                <p class="mt-2 text-sm text-gray-500">
+                    Расскажите о целях проекта, используемых технологиях и его особенностях
+                </p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <a href="{{ url_for('index') }}"
+                    class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-times mr-2"></i>
+                    Отмена
+                </a>
+                <button type="submit"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>
+                    Создать проект
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

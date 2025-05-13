@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex items-center space-x-6">
+            <div class="flex-shrink-0">
+                <div class="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <i class="fas fa-user text-4xl text-white"></i>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">{{ user.username }}</h1>
+                <p class="text-gray-600">{{ user.email }}</p>
+                <div class="mt-4 flex space-x-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-code-branch mr-2"></i>
+                        {{ user.projects|length }} проектов
+                    </span>
+                    {#
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        На сайте с {{ user.created_at.strftime('%d.%m.%Y') }}
+                    </span>
+                    #}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold flex items-center">
+                <i class="fas fa-folder text-blue-600 mr-2"></i>
+                Мои проекты
+            </h2>
+            <a href="{{ url_for('new_project') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                <i class="fas fa-plus mr-2"></i> Новый проект
+            </a>
+        </div>
+        
+        {% if user.projects %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for project in user.projects %}
+            <div class="border rounded-lg p-4 hover-scale">
+                <h3 class="text-lg font-medium mb-2">
+                    <a href="{{ url_for('project', project_id=project.id) }}" class="text-blue-600 hover:text-blue-800 transition-colors">
+                        {{ project.name }}
+                    </a>
+                </h3>
+                <p class="text-gray-600 text-sm mb-4">{{ project.description }}</p>
+                <div class="flex items-center text-sm text-gray-500 mb-4">
+                    <i class="fas fa-calendar mr-2"></i>
+                    <span>{{ project.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
+                        <i class="fas fa-code mr-1"></i> {{ project.issues|length }} задач
+                    </span>
+                    <span class="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full">
+                        <i class="fas fa-tag mr-1"></i> {{ project.releases|length }} релизов
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-folder-open text-3xl text-gray-400"></i>
+            </div>
+            <p class="text-gray-600 mb-4">У вас пока нет проектов</p>
+            <a href="{{ url_for('new_project') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                <i class="fas fa-plus mr-2"></i> Создать первый проект
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6 flex flex-wrap gap-6 justify-center">
+        <div class="text-center">
+            <div class="text-2xl font-bold text-green-600">{{ user_projects_count }}</div>
+            <div class="text-gray-600">Ваших проектов</div>
+        </div>
+        <div class="text-center">
+            <div class="text-2xl font-bold text-yellow-600">{{ user_issues_count }}</div>
+            <div class="text-gray-600">Ваших задач</div>
+        </div>
+        <div class="text-center">
+            <div class="text-2xl font-bold text-purple-600">{{ user_releases_count }}</div>
+            <div class="text-gray-600">Ваших релизов</div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

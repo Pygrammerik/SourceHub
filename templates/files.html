@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Файлы проекта - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fas fa-folder-open text-blue-600 mr-2"></i>
+                Файлы проекта: {{ project.name }}
+            </h1>
+            <a href="{{ url_for('project', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Назад к проекту
+            </a>
+        </div>
+
+        {% if items %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Размер</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Изменен</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% macro render_item(item, level=0) %}
+                    <tr class="hover:bg-gray-50" id="item-{{ item.path|replace('/', '-') }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center" style="padding-left: {{ level * 1.5 }}rem">
+                                {% if item.type == 'directory' %}
+                                <button onclick="toggleDirectory('{{ item.path|replace('/', '-') }}')" class="mr-2 text-yellow-500 hover:text-yellow-600">
+                                    <i class="fas fa-chevron-right transition-transform duration-200" id="icon-{{ item.path|replace('/', '-') }}"></i>
+                                </button>
+                                <i class="fas fa-folder text-yellow-500 mr-2"></i>
+                                {% else %}
+                                <i class="fas fa-file text-gray-500 mr-2"></i>
+                                {% endif %}
+                                <span class="text-sm font-medium text-gray-900">{{ item.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if item.type == 'file' %}
+                                {% if item.size < 1024 %}
+                                    {{ item.size }} Б
+                                {% elif item.size < 1024 * 1024 %}
+                                    {{ (item.size / 1024)|round(1) }} КБ
+                                {% else %}
+                                    {{ (item.size / (1024 * 1024))|round(1) }} МБ
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ item.modified.strftime('%d.%m.%Y %H:%M') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if item.type == 'file' %}
+                            <a href="{{ url_for('download_file', project_id=project.id, filename=item.path) }}" 
+                               class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-download mr-1"></i> Скачать
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if item.type == 'directory' and item.contents %}
+                    <tr class="hidden" id="contents-{{ item.path|replace('/', '-') }}">
+                        <td colspan="4" class="p-0">
+                            {% for subitem in item.contents %}
+                                {{ render_item(subitem, level + 1) }}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endmacro %}
+
+                    {% for item in items %}
+                        {{ render_item(item) }}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-folder-open text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Файлы не найдены</h3>
+            <p class="text-gray-500 mb-4">В этом проекте пока нет загруженных файлов</p>
+            <a href="{{ url_for('project', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                <i class="fas fa-upload mr-2"></i> Загрузить файлы
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleDirectory(id) {
+    const contents = document.getElementById('contents-' + id);
+    const icon = document.getElementById('icon-' + id);
+    
+    if (contents.classList.contains('hidden')) {
+        contents.classList.remove('hidden');
+        icon.classList.add('rotate-90');
+    } else {
+        contents.classList.add('hidden');
+        icon.classList.remove('rotate-90');
+    }
+}
+</script>
+{% endblock %} 

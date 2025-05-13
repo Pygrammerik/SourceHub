@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Просмотр файла{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h2 class="text-xl font-semibold mb-4">
+        <i class="fas fa-file-alt text-blue-600 mr-2"></i>
+        {{ filename }}
+    </h2>
+    <pre class="bg-gray-100 rounded p-4 overflow-x-auto text-sm" style="max-height: 70vh;">{{ content }}</pre>
+    <a href="{{ url_for('project', project_id=project.id) }}" class="mt-4 inline-block text-blue-600 hover:text-blue-800">← Назад к проекту</a>
+</div>
+{% endblock %}

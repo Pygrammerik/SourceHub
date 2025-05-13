@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Project Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">{{ project.name }}</h1>
+                <p class="text-gray-600 mb-4">{{ project.description }}</p>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-user mr-2"></i>
+                    <span>{{ project.owner.username }}</span>
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-calendar mr-2"></i>
+                    <span>{{ project.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+            </div>
+            <div class="space-x-3">
+                {% if current_user.is_authenticated and current_user.id == project.user_id %}
+                <a href="{{ url_for('edit_project', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-edit mr-2"></i> Редактировать
+                </a>
+                <button onclick="document.getElementById('uploadForm').classList.toggle('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors">
+                    <i class="fas fa-upload mr-2"></i> Загрузить код
+                </button>
+                <a href="{{ url_for('new_release', project_id=project.id) }}"
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-tag mr-2"></i> Новый релиз
+                </a>
+                {% endif %}
+                {% if items %}
+                <a href="{{ url_for('download_project', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-download mr-2"></i> Скачать проект
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Upload Form -->
+        {% if current_user.is_authenticated and current_user.id == project.user_id %}
+        <div id="uploadForm" class="hidden mt-4 p-4 border border-gray-200 rounded-lg">
+            <form action="{{ url_for('upload_code', project_id=project.id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="code_files" class="block text-sm font-medium text-gray-700 mb-2">Выберите файлы или ZIP-архивы</label>
+                    <input type="file" name="code_files" id="code_files" multiple required
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="mt-1 text-sm text-gray-500">
+                        Для загрузки папок, упакуйте их в ZIP-архивы. Можно выбрать несколько файлов одновременно.
+                    </p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="document.getElementById('uploadForm').classList.add('hidden')"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                        Отмена
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                        Загрузить
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Files Link -->
+        <div class="mt-4">
+            <a href="{{ url_for('view_files', project_id=project.id) }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                <i class="fas fa-folder-open mr-2"></i>
+                Просмотреть файлы проекта
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Files + Releases Section -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-folder text-blue-600 mr-2"></i>
+                        Файлы проекта
+                    </h2>
+                </div>
+                
+                {% if items %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Размер</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Изменен</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% macro render_item(item, level=0) %}
+                            <tr class="hover:bg-gray-50" id="item-{{ item.path|replace('/', '-') }}">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center" style="padding-left: {{ level * 1.5 }}rem">
+                                        {% if item.type == 'directory' %}
+                                        <button onclick="toggleDirectory('{{ item.path|replace('/', '-') }}')" class="mr-2 text-yellow-500 hover:text-yellow-600">
+                                            <i class="fas fa-chevron-right transition-transform duration-200 chevron-icon" id="icon-{{ item.path|replace('/', '-') }}"></i>
+                                        </button>
+                                        <i class="fas fa-folder text-yellow-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-900">{{ item.name }}</span>
+                                        {% else %}
+                                        <i class="fas fa-file text-gray-500 mr-2"></i>
+                                        <a href="{{ url_for('view_file', project_id=project.id, filename=item.path) }}"
+                                           class="text-sm font-medium text-blue-700 hover:underline"
+                                           title="Просмотреть файл">
+                                            {{ item.name }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if item.type == 'file' %}
+                                        {% if item.size < 1024 %}
+                                            {{ item.size }} Б
+                                        {% elif item.size < 1024 * 1024 %}
+                                            {{ (item.size / 1024)|round(1) }} КБ
+                                        {% else %}
+                                            {{ (item.size / (1024 * 1024))|round(1) }} МБ
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ item.modified.strftime('%d.%m.%Y %H:%M') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex space-x-3">
+                                        {% if item.type == 'file' %}
+                                        <a href="{{ url_for('download_file', project_id=project.id, filename=item.path) }}" 
+                                           class="text-blue-600 hover:text-blue-900">
+                                            <i class="fas fa-download mr-1"></i> Скачать
+                                        </a>
+                                        {% endif %}
+                                        {% if current_user.is_authenticated and current_user.id == project.user_id %}
+                                        <form action="{{ url_for('delete_file', project_id=project.id, filename=item.path) }}" method="POST" class="inline">
+                                            <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить {{ 'папку' if item.type == 'directory' else 'файл' }} {{ item.name }}?')" 
+                                                    class="text-red-600 hover:text-red-900">
+                                                <i class="fas fa-trash mr-1"></i> Удалить
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if item.type == 'directory' and item.contents %}
+                            <tr class="directory-row" id="contents-{{ item.path|replace('/', '-') }}" style="display: none;">
+                                <td colspan="4" class="p-0">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            {% for subitem in item.contents %}
+                                                {{ render_item(subitem, level + 1) }}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endmacro %}
+
+                            {% for item in items %}
+                                {{ render_item(item) }}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-folder-open text-gray-400 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Файлы не найдены</h3>
+                    <p class="text-gray-500 mb-4">В этом проекте пока нет загруженных файлов</p>
+                </div>
+                {% endif %}
+            </div>
+            <!-- Блок релизов -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fas fa-tag text-purple-600 mr-2"></i> Релизы
+                </h2>
+                {% if project.releases %}
+                    <ul>
+                        {% for release in project.releases %}
+                            <li class="mb-2 p-3 bg-purple-100 rounded-lg flex items-center justify-between">
+                                <div>
+                                    <span class="font-bold text-purple-800">{{ release.version }}</span>
+                                    <span class="text-gray-600 ml-2">{{ release.created_at.strftime('%d.%m.%Y') }}</span>
+                                    <div class="text-gray-700 mt-1">{{ release.description }}</div>
+                                </div>
+                                {% if current_user.is_authenticated and current_user.id == project.user_id %}
+                                <form method="POST" action="{{ url_for('delete_release', project_id=project.id, release_id=release.id) }}" onsubmit="return confirm('Удалить этот релиз?');">
+                                    <button type="submit" class="ml-4 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs flex items-center">
+                                        <i class="fas fa-trash-alt mr-1"></i> Удалить
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-gray-500">Релизов пока нет.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Issues Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-tasks text-blue-600 mr-2"></i>
+                        Задачи
+                    </h2>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('new_issue', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i> Новая задача
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% for issue in project.issues %}
+                <div class="border-b border-gray-200 py-4 last:border-b-0">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                {% if issue.status == 'open' %}bg-green-100 text-green-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if issue.status == 'open' %}
+                                <i class="fas fa-circle text-green-500 mr-1"></i>
+                                {% else %}
+                                <i class="fas fa-check-circle text-gray-500 mr-1"></i>
+                                {% endif %}
+                                {{ 'Открыта' if issue.status == 'open' else 'Закрыта' }}
+                            </span>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">{{ issue.title }}</h3>
+                            <p class="mt-1 text-sm text-gray-500">{{ issue.description }}</p>
+                            <div class="mt-2 text-sm text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ issue.created_at.strftime('%d.%m.%Y') }}
+                            </div>
+                        </div>
+                        {% if current_user.is_authenticated and current_user.id == project.user_id %}
+                        <form action="{{ url_for('delete_issue', project_id=project.id, issue_id=issue.id) }}" method="POST" class="ml-4">
+                            <button type="submit" onclick="return confirm('Удалить задачу {{ issue.title }}?')" class="text-red-600 hover:text-red-900 text-sm">
+                                <i class="fas fa-trash mr-1"></i> Удалить
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Watermark -->
+<div class="fixed bottom-4 right-4 text-gray-400 text-sm font-medium flex items-center">
+    Made by Pygrammer with <span class="text-red-500 mx-1">❤️</span>
+</div>
+
+<style>
+.directory-row {
+    display: none;
+}
+.directory-row.expanded {
+    display: table-row;
+}
+.chevron-icon {
+    transition: transform 0.2s ease;
+}
+.chevron-icon.expanded {
+    transform: rotate(90deg);
+}
+</style>
+
+<script>
+function toggleDirectory(id) {
+    const contents = document.getElementById('contents-' + id);
+    const icon = document.getElementById('icon-' + id);
+    
+    if (!contents || !icon) return;
+    
+    if (contents.style.display === 'none') {
+        contents.style.display = 'table-row';
+        icon.style.transform = 'rotate(90deg)';
+    } else {
+        contents.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Инициализация - скрываем все папки при загрузке
+window.onload = function() {
+    const contents = document.querySelectorAll('.directory-row');
+    contents.forEach(content => {
+        content.style.display = 'none';
+    });
+};
+</script>
+{% endblock %} 
